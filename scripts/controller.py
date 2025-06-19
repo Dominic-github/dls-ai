@@ -27,7 +27,7 @@ BUTTONS ={
     "joystick_center": [480,500],
 
     'pressing': [1800, 900],
-    "keeper_rush": [2000, 880]
+    "keeper_rush": [2000, 750]
 }
 
 d = u2.connect()
@@ -70,7 +70,6 @@ def send_action_career(action, x=None, y=None):
         tap(x, y)
     elif action == "continu":
         tap(x, y)
-        time.sleep(3)
     elif action == "ok":
         tap(x, y)
     elif action == "close":
@@ -93,7 +92,6 @@ def send_action_live(action, x=None, y=None):
         tap(x, y)
     elif action == "continu":
         tap(x, y)
-        time.sleep(3)
     elif action == "disconect_touch":
         tap(x, y)
     elif action == "continue_green_btn":
@@ -112,19 +110,25 @@ def send_action_ingame(action, x=None, y=None):
     if( action == "pass"):
         play_action(x, y, BUTTONS['pass'][0], BUTTONS['pass'][1], 30)
 
+    
+    if( action == "pass_small"):
+        play_action(x, y, BUTTONS['pass'][0], BUTTONS['pass'][1], 15)
+        play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 20)
+
+
     if( action == "shoot"):
         k = random.randint(0, 1)
         if k == 0:
-            play_action(BUTTONS["move_up_left"][0], BUTTONS["move_up_left"][1], BUTTONS['shoot'][0], BUTTONS['shoot'][1], 5)
+            play_action(BUTTONS["move_up"][0]+15, BUTTONS["move_up"][1], BUTTONS['shoot'][0], BUTTONS['shoot'][1], 8)
         else:
-            play_action(BUTTONS["move_up_right"][0], BUTTONS["move_up_right"][1], BUTTONS['shoot'][0], BUTTONS['shoot'][1], 5)
+            play_action(BUTTONS["move_up"][0]-15, BUTTONS["move_up"][1], BUTTONS['shoot'][0], BUTTONS['shoot'][1], 8)
 
     if( action == "pass_up"):
         play_action(x, y, BUTTONS['pass_up'][0], BUTTONS['pass_up'][1], 25)
     
     if( action == "shoot_up"):
-        hold(BUTTONS['shoot'][0], BUTTONS['shoot'][1], 0.3)
-        play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['shoot'][0], BUTTONS['shoot'][1], 20)
+        hold(BUTTONS['shoot'][0], BUTTONS['shoot'][1], 0.42)
+        play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['shoot'][0], BUTTONS['shoot'][1], 50)
 
     if (action == "r_live"):
         tap(BUTTONS["skill"][0], BUTTONS["skill"][1])
@@ -155,14 +159,37 @@ def send_action_ingame(action, x=None, y=None):
     
     if (action == "default_move"):
         print("[ℹ️] Default move action")
-        hold(BUTTONS['move_up'][0], BUTTONS['move_up'][1], 3)
-        play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 30)
-    
+        k = random.randint(0, 10)
+
+        if (k > 1 ):
+            play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 15)
+            hold(BUTTONS['move_up'][0], BUTTONS['move_up'][1], 3)
+        elif (k == 6):
+            play_action(BUTTONS["move_up_left"][0]-20, BUTTONS["move_up_left"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 15)
+            hold(BUTTONS['move_up_left'][0], BUTTONS['move_up_left'][1], 3)
+        elif (k == 8):
+            play_action(BUTTONS["move_up_right"][0]+20, BUTTONS["move_up_right"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 15)
+            hold(BUTTONS['move_up_right'][0], BUTTONS['move_up_right'][1], 3)
+        elif (k == 5 or k == 7 or k == 9):
+            play_action(BUTTONS['move_up_left'][0], BUTTONS['move_up_left'][1], BUTTONS['pass'][0], BUTTONS['pass'][1], 15)
+            hold(BUTTONS['move_up_right'][0], BUTTONS['move_up_right'][1], 1)
+            hold(BUTTONS['move_up_left'][0], BUTTONS['move_up_left'][1], 1)
+
+        else:
+            play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 15)
+            hold(BUTTONS['move_up'][0], BUTTONS['move_up'][1], 3)
+
+
+
     if (action == "move_slow"):
-        play_action(BUTTONS["move_up"][0], BUTTONS["move_up"][1], BUTTONS['skill'][0], BUTTONS['skill'][1], 10)
+         hold(BUTTONS['move_up'][0], BUTTONS['move_up'][1], 1)
     
     if (action == "keeper_rush"):
-        play_action(BUTTONS["move_down"][0], BUTTONS["move_down"][1], BUTTONS['keeper_rush'][0], BUTTONS['keeper_rush'][1], 100)
+        k =random.randint(0, 1)
+        if k == 0:
+            play_action(BUTTONS["move_up_left"][0]-50, BUTTONS["move_up_left"][1], BUTTONS['keeper_rush'][0], BUTTONS['keeper_rush'][1], 100)
+        else:
+            play_action(BUTTONS["move_up_right"][0]+20, BUTTONS["move_up_right"][1], BUTTONS['keeper_rush'][0], BUTTONS['keeper_rush'][1], 100)
 
 
 

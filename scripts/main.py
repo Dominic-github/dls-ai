@@ -22,6 +22,7 @@ stop_event = threading.Event()
 
 # Biến mode được thiết lập ở main_loop
 current_mode = None
+continue_hold = False
 
 def clear_action_queue():
     try:
@@ -34,20 +35,27 @@ def detect_thread():
     while not stop_event.is_set():
         mode = current_mode
         # ret, frame = cap.read()
+        global continue_hold
 
         frame = screenshot()  # Sử dụng hàm screenshot để lấy ảnh từ webcam ảo
+
+        if continue_hold:
+            time.sleep(4)
+            continue_hold = False
+            frame = screenshot()  # Sử dụng hàm screenshot để lấy ảnh từ webcam ảo
+
 
         # if not ret:
         #     continue
 
         try:
             if mode == '1':  # Career
-                results = model(frame, conf=0.6)[0]
+                results = model(frame, conf=0.4)[0]
                 actions = decide_action_career(results)
                 visualize_debug(results, frame, "debug_interface.jpg")
 
                 if not actions:
-                    results_ingame = model_ingame(frame)[0]
+                    results_ingame = model_ingame(frame, conf=0.5)[0]
                     actions = decide_action_ingame(results_ingame)
                     visualize_debug(results_ingame, frame, "debug_ingame.jpg")
 
@@ -65,14 +73,14 @@ def detect_thread():
 
             elif mode == '2':  # Live
                 frame = cv2.resize(frame, (2400, 1080))
-                results = model(frame, conf=0.6)[0]
+                results = model(frame, conf=0.4)[0]
                 actions = decide_action_live(results)
-                visualize_debug(results, frame, "debug_live.jpg")
+                # visualize_debug(results, frame, "debug_live.jpg")
 
                 if not actions:
                     results_ingame = model_ingame(frame, conf=0.5)[0]
                     actions = decide_action_ingame(results_ingame)
-                    visualize_debug(results_ingame, frame, "debug_ingame.jpg")
+                    # visualize_debug(results_ingame, frame, "debug_ingame.jpg")
 
                     if not actions:
                         print("[ℹ️] Không có hành động nào được xác định.")
@@ -90,22 +98,36 @@ def detect_thread():
 
 # Thread 2: xử lý gửi hành động
 def action_thread():
+    global continue_hold
+
     while not stop_event.is_set():
         try:
             print("[🚀] Đang chờ hành động từ hàng đợi...", action_queue.get())
             mode, (action, x, y) = action_queue.get()
+            
 
             print(f"[🚀] Gửi action: {action} với tọa độ ({x}, {y})")
             if mode == '1':
                 send_action_career(action, x, y)
-                time.sleep(3)
+                if(action == "continu"):
+                    continue_hold = True
+                    clear_action_queue()
+                    time.sleep(3)
+                    continue
+                time.sleep(2)
             elif mode == '2':
                 print(f"[🎮] Hành động: {action} tại tọa độ ({x}, {y})")
                 send_action_live(action, x, y)
-                time.sleep(3)
+                if(action == "continu"):
+                    continue_hold = True
+                    clear_action_queue()
+                    time.sleep(4)
+                    continue
+                time.sleep(2)
             else:
                 send_action_ingame(action, x, y)
                 clear_action_queue()
+            
 
         except queue.Empty:
             continue
@@ -156,6 +178,7 @@ def choose_mode():
 
 def main_loop():
     global current_mode
+    global continue_hold
     current_mode = choose_mode()
 
     t1 = threading.Thread(target=detect_thread)

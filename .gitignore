@@ -4,6 +4,6 @@ dls_*/
 
 screen.png
 debug_*.jpg
-
+scripts/__pycache__/
 
 runs/

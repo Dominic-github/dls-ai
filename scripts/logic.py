@@ -188,30 +188,39 @@ def decide_action_ingame(detections):
          center = player_now[0]
     
     if my_goal:
-        ball_pos = ball[0]
         my_goal_pos = my_goal[0]
-        dist = np.linalg.norm(ball_pos - my_goal_pos)
+        dist = np.linalg.norm(center_screen - my_goal_pos)
         if dist < 400:
-            angle = calculate_angle(my_goal_pos, ball_pos)
+            angle = calculate_angle(my_goal_pos, center_screen)
             target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=40)
             actions.append(("keeper_rush", target[0], target[1]))
             return actions
 
-     # Nếu không có đồng đội gần nhưng có đối thủ gần -> chuyền cho đồng đội tốt nhất
-    if opponent_players:
-        opponent_near = [op for op in opponent_players if np.linalg.norm(center - op) < 100]
+    # Nếu không có đồng đội gần nhưng có đối thủ gần -> chuyền cho đồng đội tốt nhất
+    # if opponent_players:
+    # opponent_near = [op for op in opponent_players if np.linalg.norm(center - op) < 100]
 
-        print(f"[ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️] Số lượng đối thủ gần: {len(opponent_near)}")
-        if opponent_near and  my_players:
-            # Tìm đồng đội ở phía trước (hoặc mọi người nếu không lọc)
-            candidates = [p for p in my_players if p[1] < center[1]]
-            if not candidates:
-                candidates = my_players  # fallback nếu không ai ở phía trước
+    # print(f"[ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️] Số lượng đối thủ gần: {len(opponent_near)}")
+    # if opponent_near and  my_players:
+    #     # Tìm đồng đội ở phía trước (hoặc mọi người nếu không lọc)
+    #     candidates = [p for p in my_players if p[1] < center[1]]
+    #     if not candidates:
+    #         candidates = my_players  # fallback nếu không ai ở phía trước
 
-            best_pass = min(candidates, key=lambda p: np.linalg.norm(p - center))
-            angle = calculate_angle(center, best_pass)
-            target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=30)
-            actions.append(("pass", target[0], target[1]))
+    #     best_pass = min(candidates, key=lambda p: np.linalg.norm(p - center))
+    #     angle = calculate_angle(center, best_pass)
+    #     target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=30)
+    #     actions.append(("pass", target[0], target[1]))
+    #     return actions
+    
+ # Nếu có bóng nhưng đang ở xa thì chạy về hướng bóng
+    if ball:
+        ball_pos = ball[0]
+        distance_to_ball = np.linalg.norm(center - ball_pos)
+        if distance_to_ball >= 400:
+            angle = calculate_angle(center, ball_pos)
+            target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=40)
+            actions.append(("run_to_ball", target[0], target[1]))
             return actions
 
     # Nếu có opponent gần bóng hơn player_now thì pressing
@@ -228,31 +237,25 @@ def decide_action_ingame(detections):
                 return actions
     
 
-    # Nếu có bóng nhưng đang ở xa thì chạy về hướng bóng
-    if ball:
-        ball_pos = ball[0]
-        distance_to_ball = np.linalg.norm(center - ball_pos)
-
-        if distance_to_ball >= 280:
-            angle = calculate_angle(center, ball_pos)
-            target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=40)
-            actions.append(("run_to_ball", target[0], target[1]))
-            return actions
+   
 
     # Nếu gần khung thành thì sút
     if goal:
         dist_to_goal = np.linalg.norm(center_screen - goal[0])
         print(f"[ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️ℹ️] Distance to goal: {dist_to_goal}")
-        if dist_to_goal < 330:
+        if dist_to_goal < 340:
             angle = calculate_angle(center_screen, goal[0])
             target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=40)
             actions.append(("shoot", target[0], target[1]))
             return actions
         else:
-            if dist_to_goal < 400:
+            if dist_to_goal < 420:
                 angle = calculate_angle(center_screen, goal[0])
                 target = joystick_target(BUTTONS['joystick_center'], angle, strength=1.0, radius=150, extend=40)
                 actions.append(("move_slow", target[0], target[1]))
+                return actions
+            else:
+                actions.append(("default_move", BUTTONS['joystick_center'][0], BUTTONS['joystick_center'][1]))
                 return actions
 
 
@@ -267,9 +270,9 @@ def decide_action_ingame(detections):
             return actions
 
     # Nếu bóng ở phía trên player_now và gần opponent hơn thì pressing
-    if ball and opponent_players:
+    if ball and player_now and opponent_players:
         ball_pos = ball[0]
-        player_pos = player_now[0] if player_now else center
+        player_pos = player_now[0]
 
         # Bóng ở trên cầu thủ
         if ball_pos[1] < player_pos[1]:
@@ -283,9 +286,7 @@ def decide_action_ingame(detections):
                 actions.append(("pressing", target[0], target[1]))
                 return actions
 
-    if my_players or player_now or goal:
-        # Nếu không có hành động nào khác, di chuyển về phía đồng đội gần nhất
-        actions.append(("default_move", 1, 1))
-
-    return actions
+    if my_players or player_now:
+        actions.append(("default_move", BUTTONS['joystick_center'][0], BUTTONS['joystick_center'][1]))
+        return actions
 
